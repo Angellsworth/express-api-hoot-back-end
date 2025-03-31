@@ -1,46 +1,46 @@
-// Import mongoose so we can define our schema and model
+// Import mongoose to define schemas and models
 const mongoose = require('mongoose')
 
-
+// Define the Comment schema (used as a subdocument inside a Hoot)
 const commentSchema = new mongoose.Schema({
-    test: {
-        type: String,
-        required: true
-    },
-    author: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-},{ timestamps: true })
-
-
-// Define the schema for a Hoot/Parent Schema(like a post or message)
-const hootSchema = new mongoose.Schema(
-  {
-    // Title of the hoot - required string
-    title: {
-      type: String,
-      required: true,
-    },
-    // Main content of the hoot - also required
-    text: {
-      type: String,
-      required: true,
-    },
-    // Category must be one of the specified values
-    category: {
-      type: String,
-      required: true,
-      enum: ['News', 'Sports', 'Games', 'Movies', 'Music', 'Television'], // restricts to these categories
-    },
-    // Reference to the User who authored the hoot
-    // This allows us to "populate" user details later (like name or username)
-    author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    comment: [commentSchema] //embedded comment Schema
+  // The content of the comment — required
+  text: {
+    type: String,
+    required: true
   },
-  // Automatically adds createdAt and updatedAt timestamps
-  { timestamps: true }
-)
+  // Reference to the user who made the comment
+  author: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+}, 
+// Automatically adds createdAt and updatedAt timestamps to each comment
+{ timestamps: true })
 
-// Create the Hoot model using the schema
+// Define the main Hoot schema (like a social media post)
+const hootSchema = new mongoose.Schema({
+  // Title of the hoot — required
+  title: {
+    type: String,
+    required: true,
+  },
+  // Body/content of the hoot — required
+  text: {
+    type: String,
+    required: true,
+  },
+  // Category of the hoot — must be one of the listed options
+  category: {
+    type: String,
+    required: true,
+    enum: ['News', 'Sports', 'Games', 'Movies', 'Music', 'Television'],
+  },
+  // Reference to the user who created the hoot
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
+  // Embedded array of comments — each follows the commentSchema
+  comments: [commentSchema]
+}, 
+// Automatically adds createdAt and updatedAt timestamps to each hoot
+{ timestamps: true })
+
+// Create and export the Hoot model
 const Hoot = mongoose.model('Hoot', hootSchema)
-
-// Export the model so we can use it in other files
 module.exports = Hoot;

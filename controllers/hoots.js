@@ -46,7 +46,10 @@ router.get('/', verifyToken, async (req, res) => {
 router.get('/:hootId', verifyToken, async (req, res) => {
   try {
     // Step 1: Find the hoot by its ID and populate the author
-    const hoot = await Hoot.findById(req.params.hootId).populate('author');
+    const hoot = await Hoot.findById(req.params.hootId).populate([
+      'author',
+      'comments.author',
+    ]);
     // Step 2: Send back the single hoot
     res.status(200).json(hoot);
   } catch (error) {
@@ -115,7 +118,7 @@ router.delete('/:hootId', verifyToken, async (req, res) => {
   });
 
 // ********************************************
-// POST /hoots/:hootId/comments - CREATE route (protected by token)
+// POST Comments /hoots/:hootId/comments - CREATE route (protected by token)
 router.post('/:hootId/comments', verifyToken, async (req, res) => {
     try {
       // Step 1: Attach the logged-in user's ID as the comment author
@@ -141,7 +144,48 @@ router.post('/:hootId/comments', verifyToken, async (req, res) => {
     }
   });
 
-  // ********************************************
-// POST /hoots/:hootId/comments - CREATE route (protected by token)
+// ********************************************
+// PUT /hoots/:hootId/comments/:commentId - UPDATE a comment (protected)
+router.put('/:hootId/comments/:commentId', verifyToken, async (req, res) => {
+  try {
+    const hoot = await Hoot.findById(req.params.hootId);
+    const comment = hoot.comments.id(req.params.commentId);
 
+    if (comment.author.toString() !== req.user._id) {
+      return res
+        .status(403)
+        .json({ message: 'You are not authorized to edit this comment' });
+    }
+
+    comment.text = req.body.text;
+    await hoot.save();
+
+    res.status(200).json({ message: 'Comment updated successfully' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+// ********************************************
+// DELETE /hoots/:hootId/comments/:commentId - DELETE a comment (protected)
+router.delete('/:hootId/comments/:commentId', verifyToken, async (req, res) => {
+  try {
+    const hoot = await Hoot.findById(req.params.hootId);
+    const comment = hoot.comments.id(req.params.commentId);
+
+    if (comment.author.toString() !== req.user._id) {
+      return res
+        .status(403)
+        .json({ message: 'You are not authorized to delete this comment' });
+    }
+
+    hoot.comments.remove({ _id: req.params.commentId });
+    await hoot.save();
+
+    res.status(200).json({ message: 'Comment deleted successfully' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 module.exports = router;
